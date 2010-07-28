@@ -44,9 +44,9 @@ class OpenIdBackend:
             
             name_count = User.objects.filter(username__startswith = nickname).count()
             if name_count:
-                username = 'OI:{0}{1}'.format(nickname, name_count + 1)
+                username = 'OI-{0}{1}'.format(nickname, name_count + 1)
             else:
-                username = 'OI:{0}'.format(nickname)
+                username = 'OI-{0}'.format(nickname)
                 
             if email is None :
                 valid_username = False
@@ -97,7 +97,7 @@ class LinkedInBackend:
             return user
         except LinkedInUserProfile.DoesNotExist:
             # Create a new user
-            username = 'LI:%s' % profile.id
+            username = 'LI-%s' % profile.id
             if not user:
                 user = User(username =  username)
                 temp_password = User.objects.make_random_password(length=12)
@@ -137,7 +137,7 @@ class TwitterBackend:
             return user
         except TwitterUserProfile.DoesNotExist:
             # Create new user
-            username = "TW:{0}".format(screen_name)
+            username = "TW-{0}".format(screen_name)
             if not user:
                 user = User(username =  username)
                 temp_password = User.objects.make_random_password(length=12)
@@ -187,7 +187,7 @@ class FacebookBackend:
             if not fb_data:
                 return None
             fb_data = fb_data[0]
-            username = 'FB:%s' % fb_data['uid']
+            username = 'FB-%s' % fb_data['uid']
             if not user:
                 user = User.objects.create(username = username)
                 user.first_name = fb_data['first_name']
