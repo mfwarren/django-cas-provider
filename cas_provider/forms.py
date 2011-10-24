@@ -5,7 +5,7 @@ from django.contrib.auth import authenticate
 from utils import create_login_ticket
 
 class LoginForm(forms.Form):
-    username = forms.CharField(max_length=30)
+    email = forms.CharField(max_length=255)
     password = forms.CharField(widget=forms.PasswordInput)
     #warn = forms.BooleanField(required=False)  # TODO: Implement
     lt = forms.CharField(widget=forms.HiddenInput, initial=create_login_ticket)

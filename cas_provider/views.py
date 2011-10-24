@@ -23,7 +23,7 @@ def login(request, template_name='cas/login.html', success_redirect='/accounts/'
             return HttpResponseRedirect(success_redirect)
     errors = []
     if request.method == 'POST':
-        username = request.POST.get('username', None)
+        email = request.POST.get('email', None)
         password = request.POST.get('password', None)
         service = request.POST.get('service', None)
         lt = request.POST.get('lt', None)
@@ -34,7 +34,7 @@ def login(request, template_name='cas/login.html', success_redirect='/accounts/'
             errors.append('Login ticket expired. Please try again.')
         else:
             login_ticket.delete()
-            user = authenticate(username=username, password=password)
+            user = authenticate(username=email, password=password)
             if user is not None:
                 if user.is_active:
                     auth_login(request, user)
@@ -56,9 +56,10 @@ def validate(request):
     if service is not None and ticket_string is not None:
         try:
             ticket = ServiceTicket.objects.get(ticket=ticket_string)
-            username = ticket.user.username
+            ### NOTE: We've changed this to return the email address, not the username.
+            email = ticket.user.email
             ticket.delete()
-            return HttpResponse("yes\n%s\n" % username)
+            return HttpResponse("yes\n%s\n" % email)
         except:
             pass
     return HttpResponse("no\n\n")
