@@ -27,7 +27,9 @@ def login(request, template_name='cas/login.html', success_redirect='/accounts/'
         password = request.POST.get('password', None)
         service = request.POST.get('service', None)
         lt = request.POST.get('lt', None)
-        
+        if not request.POST.get('remember_me', None):
+          request.session.set_expiry(0)
+                
         try:
             login_ticket = LoginTicket.objects.get(ticket=lt)
         except:
