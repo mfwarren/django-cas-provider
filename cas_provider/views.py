@@ -10,8 +10,9 @@ from utils import create_service_ticket
 
 __all__ = ['login', 'validate', 'logout']
 
-def login(request, template_name='cas/login.html', success_redirect='/accounts/'):
+def login(request, template_name='cas/login.html', success_redirect='/account/'):
     service = request.GET.get('service', None)
+    request.session['service'] = service
     if request.user.is_authenticated():
         if service is not None:
             ticket = create_service_ticket(request.user, service)
@@ -51,6 +52,26 @@ def login(request, template_name='cas/login.html', success_redirect='/accounts/'
                     errors.append('Incorrect username and/or password.')
     form = LoginForm(service)
     return render_to_response(template_name, {'form': form, 'errors': errors}, context_instance=RequestContext(request))
+
+def socialauth_login(request, user, template_name='cas/login.html', success_redirect='/account/'):
+    """ Similiar to login but user has been authenticated already through social auth.
+        This step authenticates the login and generates a service ticket.
+    """
+    service = request.session['service']
+    errors = []
+    if user is not None:
+        if user.is_active:
+            auth_login(request, user)
+            if service is not None:
+                ticket = create_service_ticket(user, service)
+                return HttpResponseRedirect(service + '?ticket=' + ticket.ticket)
+            else:
+                return HttpResponseRedirect(success_redirect)
+        else:
+            errors.append('This account is disabled.')
+    else:
+            errors.append('Incorrect username and/or password.')
+    return render_to_response(template_name, {'errors': errors}, context_instance=RequestContext(request))
     
 def validate(request):
     service = request.GET.get('service', None)
@@ -58,10 +79,9 @@ def validate(request):
     if service is not None and ticket_string is not None:
         try:
             ticket = ServiceTicket.objects.get(ticket=ticket_string)
-            ### NOTE: We've changed this to return the email address, not the username.
-            email = ticket.user.email
+            username = ticket.user.username
             ticket.delete()
-            return HttpResponse("yes\n%s\n" % email)
+            return HttpResponse("yes\n%s\n" % username)
         except:
             pass
     return HttpResponse("no\n\n")
