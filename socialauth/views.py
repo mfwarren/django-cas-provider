@@ -24,7 +24,7 @@ from socialauth.forms import EditProfileForm
 from socialauth.models import YahooContact, TwitterContact, FacebookContact,\
                             SocialProfile, GmailContact
 """
-
+from cas_provider import views as cas_provider
 from openid_consumer.views import begin
 from socialauth.lib import oauthtwitter2 as oauthtwitter
 from socialauth.lib import oauthyahoo
@@ -77,7 +77,7 @@ def linkedin_login_done(request):
     else:
         user = authenticate(linkedin_access_token=access_token)
     
-        # if user is authenticated then login user
+        # if user is authenticated then login user through CAS    
         if user:
             login(request, user)
         else:
@@ -134,10 +134,10 @@ def twitter_login_done(request):
             return HttpResponseRedirect(settings.ADD_LOGIN_REDIRECT_URL + '?add_login=false')
     else:
         user = authenticate(twitter_access_token=access_token)
-    
-        # if user is authenticated then login user
+        
+        # if user is authenticated then login user through CAS
         if user:
-            login(request, user)
+            return cas_provider.socialauth_login(request, user)
         else:
             # We were not able to authenticate user
             # Redirect to login page
@@ -192,13 +192,10 @@ def openid_done(request, provider=None):
         else:
             #authenticate and login
             user = authenticate(openid_key=openid_key, request=request, provider = provider)
+            
+            # if user is authenticated then login user through CAS
             if user:
-                login(request, user)
-                if 'openid_next' in request.session :
-                    openid_next = request.session.get('openid_next')
-                    if len(openid_next.strip()) >  0 :
-                        return HttpResponseRedirect(openid_next)
-                return HttpResponseRedirect(settings.LOGIN_REDIRECT_URL)
+                return cas_provider.socialauth_login(request, user)
             else:
                 return HttpResponseRedirect(settings.LOGIN_URL)
     else:
@@ -236,7 +233,6 @@ def facebook_login(request):
     
 def facebook_login_done(request):
     API_KEY = settings.FACEBOOK_API_KEY
-
     """
     Facebook connect for mobile doesn't set these cookies
     if API_KEY not in request.COOKIES:
@@ -244,28 +240,17 @@ def facebook_login_done(request):
         logging.debug("SOCIALAUTH: Here are some cookies: " + str(request.COOKIES))
         return HttpResponseRedirect(reverse('socialauth_login_page'))
     """
-    if request.user and request.user.is_authenticated():
-        res = authenticate(request=request, user=request.user)
-        if res:
-            return HttpResponseRedirect(settings.ADD_LOGIN_REDIRECT_URL + '?add_login=true')
-        else:
-            del request.COOKIES[API_KEY + '_session_key']
-            del request.COOKIES[API_KEY + '_user']
-            logging.debug("SOCIALAUTH: Couldn't authenticate user with Django, redirecting to Login page")
-            return HttpResponseRedirect(settings.ADD_LOGIN_REDIRECT_URL + '?add_login=false')
+    user = authenticate(request=request)
+
+    # if user is authenticated then login user through CAS
+    if user:
+        return cas_provider.socialauth_login(request, user)
     else:
-        user = authenticate(request = request)
+        request.COOKIES.pop(API_KEY + '_session_key', None)
+        request.COOKIES.pop(API_KEY + '_user', None)
 
-        if not user:
-            del request.COOKIES[API_KEY + '_session_key']
-            del request.COOKIES[API_KEY + '_user']
-            # TODO: maybe the project has its own login page?
-            logging.debug("SOCIALAUTH: Couldn't authenticate user with Django, redirecting to Login page")
-            return HttpResponseRedirect(reverse('socialauth_login_page'))
-
-        login(request, user)
-        logging.debug("SOCIALAUTH: Successfully logged in with Facebook!")
-        return HttpResponseRedirect(settings.LOGIN_REDIRECT_URL)
+        logging.debug("SOCIALAUTH: Couldn't authenticate user with Django, redirecting to Login page")
+        return HttpResponseRedirect(reverse('socialauth_login_page'))
 
 def openid_login_page(request):
     return render_to_response('openid/index.html', context_instance=RequestContext(request))
@@ -314,6 +299,9 @@ def social_logout(request):
     
     # normal logout
     logout_response = logout(request)
+    
+    # Delete the facebook cookie
+    response.delete_cookie("fbs_" + FACEBOOK_APP_ID)
     
     if getattr(settings, 'LOGOUT_REDIRECT_URL', None):
         return HttpResponseRedirect(settings.LOGOUT_REDIRECT_URL)

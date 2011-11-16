@@ -1,26 +1,26 @@
 from django.contrib.auth.models import User
+from django.contrib.sites.models import Site
+from django.core.urlresolvers import reverse
 from django.conf import settings
-from facebook import Facebook
+import facebook
 
 from socialauth.lib import oauthtwitter
 from socialauth.models import OpenidProfile as UserAssociation, TwitterUserProfile, FacebookUserProfile, LinkedInUserProfile, AuthMeta
-from socialauth.lib.facebook import get_user_info, get_facebook_signature
 from socialauth.lib.linkedin import *
-
-from datetime import datetime
+import urllib
 import random
+
 
 TWITTER_CONSUMER_KEY = getattr(settings, 'TWITTER_CONSUMER_KEY', '')
 TWITTER_CONSUMER_SECRET = getattr(settings, 'TWITTER_CONSUMER_SECRET', '')
 
-# Harmonized with PyFacebook
-
+# Harmonized with Facebook
+FACEBOOK_APP_ID = getattr(settings, 'FACEBOOK_APP_ID', '')
 FACEBOOK_API_KEY = getattr(settings, 'FACEBOOK_API_KEY', '')
 FACEBOOK_SECRET_KEY = getattr(settings, 'FACEBOOK_SECRET_KEY', '')
 FACEBOOK_URL = getattr(settings, 'FACEBOOK_URL', 'http://api.facebook.com/restserver.php')
 
 # Linkedin
-
 LINKEDIN_CONSUMER_KEY = getattr(settings, 'LINKEDIN_CONSUMER_KEY', '')
 LINKEDIN_CONSUMER_SECRET = getattr(settings, 'LINKEDIN_CONSUMER_SECRET', '')
 
@@ -163,48 +163,72 @@ class TwitterBackend:
             return User.objects.get(pk=user_id)
         except:
             return None
-        
+
 class FacebookBackend:
     def authenticate(self, request, user=None):
+        cookie = facebook.get_user_from_cookie(request.COOKIES,FACEBOOK_APP_ID,FACEBOOK_SECRET_KEY)
 
-        """
-        if not settings.FACEBOOK_API_KEY in request.COOKIES:
-            logging.debug("Could not find FACEBOOK_API_KEY in Cookies")
-            return None
-        """
+        if cookie:
+            uid = cookie['uid']
+            access_token = cookie['access_token']
+        else:
+            # if cookie does not exist
+            # assume logging in normal way
+            params = {}
+            params["client_id"] = FACEBOOK_APP_ID
+            params["client_secret"] = FACEBOOK_SECRET_KEY
+            params["redirect_uri"] = '%s://%s%s' % (
+                         'https' if request.is_secure() else 'http',
+                         Site.objects.get_current().domain,
+                         reverse("socialauth_facebook_login_done"))
 
-        facebook =  Facebook(settings.FACEBOOK_API_KEY,
-                             settings.FACEBOOK_SECRET_KEY)
-                             
-        check = facebook.check_session(request)
-        fb_user = facebook.users.getLoggedInUser()
+            params["code"] = request.GET.get('code', '')
+
+            url = ("https://graph.facebook.com/oauth/access_token?"
+                   + urllib.urlencode(params))
+            from cgi import parse_qs
+            userdata = urllib.urlopen(url).read()
+            res_parse_qs = parse_qs(userdata)
+
+            # Could be a bot query
+            if not res_parse_qs.has_key('access_token'):
+                return None
+            
+            access_token = res_parse_qs['access_token'][-1]
+
+            graph = facebook.GraphAPI(access_token)
+            uid = graph.get_object('me')['id']
 
         try:
-            profile = FacebookUserProfile.objects.get(facebook_uid = str(fb_user))
-            return profile.user
+            fb_user = FacebookUserProfile.objects.get(facebook_uid=uid)
+            return fb_user.user
+
         except FacebookUserProfile.DoesNotExist:
-            fb_data = facebook.users.getInfo([fb_user], ['uid', 'first_name', 'last_name'])
+
+            # create new FacebookUserProfile
+            graph = facebook.GraphAPI(access_token)
+            fb_data = graph.get_object("me")
+
             if not fb_data:
                 return None
-            fb_data = fb_data[0]
-            username = 'FB-%s' % fb_data['uid']
+
             if not user:
-                user = User.objects.create(username = username)
+                username = 'FB-%s' % fb_data['id']
+                user = User.objects.create(username=username)
                 user.first_name = fb_data['first_name']
                 user.last_name = fb_data['last_name']
                 user.email = username + "@socialauth"
                 user.save()
-            fb_profile = FacebookUserProfile(facebook_uid = str(fb_data['uid']), user = user)
+
+            fb_profile = FacebookUserProfile(facebook_uid=uid, user=user)
             fb_profile.save()
+
             auth_meta = AuthMeta(user=user, provider='Facebook',
                 provider_model='FacebookUserProfile', provider_id=fb_profile.pk).save()
+
             return user
-        except Exception, e:
-            print str(e)
 
-        return None
 
-    
     def get_user(self, user_id):
         try:
             return User.objects.get(pk=user_id)
