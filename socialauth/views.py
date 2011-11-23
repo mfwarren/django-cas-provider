@@ -24,7 +24,6 @@ from socialauth.forms import EditProfileForm
 from socialauth.models import YahooContact, TwitterContact, FacebookContact,\
                             SocialProfile, GmailContact
 """
-from cas_provider import views as cas_provider
 from openid_consumer.views import begin
 from socialauth.lib import oauthtwitter2 as oauthtwitter
 from socialauth.lib import oauthyahoo
@@ -46,6 +45,12 @@ def login_page(request):
 
 def facebook_xd_receiver(request):
     return render_to_response('socialauth/xd_reciever.htm')
+
+def restore_session(request, session):
+    for key, value in session.iteritems():
+        if key not in request.session:
+            request.session[key] = value
+    return request
 
 def linkedin_login(request):
     linkedin = LinkedIn(settings.LINKEDIN_CONSUMER_KEY, settings.LINKEDIN_CONSUMER_SECRET)
@@ -77,9 +82,13 @@ def linkedin_login_done(request):
     else:
         user = authenticate(linkedin_access_token=access_token)
     
-        # if user is authenticated then login user through CAS    
+        # if user is authenticated then login user through CAS
         if user:
+            # Restore unique session keys from old session
+            session = dict(request.session)
             login(request, user)
+            restore_session(request, session)
+            return HttpResponseRedirect(settings.SOCIALAUTH_CAS_LOGIN_URL)
         else:
             # We were not able to authenticate user
             # Redirect to login page
@@ -137,16 +146,17 @@ def twitter_login_done(request):
         
         # if user is authenticated then login user through CAS
         if user:
-            return cas_provider.socialauth_login(request, user)
+            # Restore unique session keys from old session
+            session = dict(request.session)
+            login(request, user)
+            restore_session(request, session)
+            return HttpResponseRedirect(settings.SOCIALAUTH_CAS_LOGIN_URL)
         else:
             # We were not able to authenticate user
             # Redirect to login page
             del request.session['access_token']
             del request.session['request_token']
             return HttpResponseRedirect(reverse('socialauth_login_page'))
-
-        # authentication was successful, use is now logged in
-        return HttpResponseRedirect(settings.LOGIN_REDIRECT_URL)
 
 def openid_login(request):
     if 'openid_identifier' in request.GET:
@@ -195,7 +205,11 @@ def openid_done(request, provider=None):
             
             # if user is authenticated then login user through CAS
             if user:
-                return cas_provider.socialauth_login(request, user)
+                # Restore unique session keys from old session
+                session = dict(request.session)
+                login(request, user)
+                restore_session(request, session)
+                return HttpResponseRedirect(settings.SOCIALAUTH_CAS_LOGIN_URL)
             else:
                 return HttpResponseRedirect(settings.LOGIN_URL)
     else:
@@ -244,7 +258,11 @@ def facebook_login_done(request):
 
     # if user is authenticated then login user through CAS
     if user:
-        return cas_provider.socialauth_login(request, user)
+        # Restore unique session keys from old session
+        session = dict(request.session)
+        login(request, user)
+        restore_session(request, session)
+        return HttpResponseRedirect(settings.SOCIALAUTH_CAS_LOGIN_URL)
     else:
         request.COOKIES.pop(API_KEY + '_session_key', None)
         request.COOKIES.pop(API_KEY + '_user', None)
