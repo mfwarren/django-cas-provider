@@ -12,7 +12,8 @@ __all__ = ['login', 'validate', 'logout']
 
 def login(request, template_name='cas/login.html', success_redirect='/account/'):
     service = request.GET.get('service', None)
-    request.session['service'] = service
+    if service is not None:
+        request.session['service'] = service
     if request.user.is_authenticated():
         if service is not None:
             ticket = create_service_ticket(request.user, service)
@@ -53,11 +54,17 @@ def login(request, template_name='cas/login.html', success_redirect='/account/')
     form = LoginForm(service)
     return render_to_response(template_name, {'form': form, 'errors': errors}, context_instance=RequestContext(request))
 
-def socialauth_login(request, user, template_name='cas/login.html', success_redirect='/account/'):
+def socialauth_login(request, template_name='cas/login.html', success_redirect='/account/'):
     """ Similiar to login but user has been authenticated already through social auth.
         This step authenticates the login and generates a service ticket.
     """
-    service = request.session['service']
+    user = request.user
+    user.backend = 'django.contrib.auth.backends.ModelBackend'
+    if request.session.has_key('service'):
+        service = request.session['service']
+        del request.session['service']
+    else:
+        service = '/'
     errors = []
     if user is not None:
         if user.is_active:
