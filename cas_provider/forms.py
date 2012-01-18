@@ -33,7 +33,7 @@ class LoginForm(forms.Form):
             lt = self.fields['lt'].initial()
         try:
             login_ticket = LoginTicket.objects.get(ticket=lt)
-        except:
+        except LoginTicket.DoesNotExist:
             raise forms.ValidationError("Login ticket expired. Please try again.")
         else:
             login_ticket.delete()
