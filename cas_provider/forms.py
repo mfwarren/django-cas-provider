@@ -11,7 +11,7 @@ class LoginForm(forms.Form):
     password = forms.CharField(widget=forms.PasswordInput)
     #warn = forms.BooleanField(required=False)  # TODO: Implement
     lt = forms.CharField(widget=forms.HiddenInput, initial=create_login_ticket, required=False)
-    service = forms.CharField(widget=forms.HiddenInput, initial='', required=False)
+    service = forms.CharField(widget=forms.HiddenInput, required=False)
     remember_me = forms.BooleanField(required=False)
 
     def __init__(self, *args, **kwargs):
@@ -28,8 +28,9 @@ class LoginForm(forms.Form):
 
     def clean_lt(self):
         lt = self.cleaned_data.get('lt',
-                                   self.initial.get('lt',
-                                                    self.fields['lt'].initial()))
+                                   self.initial.get('lt', None))
+        if lt is None:
+            lt = self.fields['lt'].initial()
         try:
             login_ticket = LoginTicket.objects.get(ticket=lt)
         except:

@@ -73,14 +73,13 @@ def login(request, template_name='cas/login.html', success_redirect='/account/',
                     errors.append('This account is disabled.')
             else:
                     errors.append('Incorrect username and/or password.')
-        if merge:
-            form = MergeLoginForm(request.GET, request=request)
-        else:
-            form = LoginForm(request.GET, request=request)
     else:
-      form = LoginForm(service)
-
+        if merge:
+            form = MergeLoginForm(initial={'service': service, 'email': request.GET.get('email')})
+        else:
+            form = LoginForm(initial={'service': service})
     return render_to_response(template_name, {'form': form, 'errors': errors}, context_instance=RequestContext(request))
+
 
 def socialauth_login(request, template_name='cas/login.html', success_redirect='/account/'):
     """ Similiar to login but user has been authenticated already through social auth.
