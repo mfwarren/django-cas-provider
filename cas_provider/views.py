@@ -61,6 +61,7 @@ def login(request, template_name='cas/login.html', success_redirect='/account/',
                     args = urllib.urlencode(args)
 
                     return HttpResponseRedirect('%s?%s' % (base_url, args))
+            
             if user is not None:
                 if user.is_active:
                     auth_login(request, user)
