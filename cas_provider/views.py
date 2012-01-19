@@ -39,7 +39,6 @@ def login(request, template_name='cas/login.html', success_redirect='/account/',
     errors = []
     if request.method == 'POST':
         if merge:
-            logging.debug('Using mergeloginform, email is %' % request.GET.get('email'))
             form = MergeLoginForm(request.POST, request=request)
         else:
             form = LoginForm(request.POST, request=request)
@@ -90,10 +89,8 @@ def login(request, template_name='cas/login.html', success_redirect='/account/',
                     errors.append('Incorrect username and/or password.')
     else:
         if merge:
-            logging.debug('Using mergeloginform, email is %' % request.GET.get('email'))
             form = MergeLoginForm(initial={'service': service, 'email': request.GET.get('email')})
         else:
-            logging.debug('Using normal login form.')
             form = LoginForm(initial={'service': service})
     logging.debug('Rendering response on %s, merge is %s', template_name, merge)
     return render_to_response(template_name, {'form': form, 'errors': errors}, context_instance=RequestContext(request))
