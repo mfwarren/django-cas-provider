@@ -1,3 +1,4 @@
+import logging
 import urllib
 
 from django.http import HttpResponse, HttpResponseRedirect
@@ -16,6 +17,8 @@ __all__ = ['login', 'validate', 'logout']
 
 
 def login(request, template_name='cas/login.html', success_redirect='/account/', merge=False):
+    logging.debug('CAS Provider Login view. Method is %s, merge is %s, template is %s.',
+                  request.method, merge, template_name)
     service = request.GET.get('service', None)
     if service is not None:
         request.session['service'] = service
@@ -23,14 +26,20 @@ def login(request, template_name='cas/login.html', success_redirect='/account/',
         if service is not None:
             ticket = create_service_ticket(request.user, service)
             if service.find('?') == -1:
-                return HttpResponseRedirect(service + '?ticket=' + ticket.ticket)
+                url = service + '?ticket=' + ticket.ticket
+                logging.debug('Redirecting to %s', url)
+                return HttpResponseRedirect(url)
             else:
-                return HttpResponseRedirect(service + '&ticket=' + ticket.ticket)
+                url = service + '&ticket=' + ticket.ticket
+                logging.debug('Redirecting to %s', url)
+                return HttpResponseRedirect()
         else:
+            logging.debug('Redirecting to %s', success_redirect)
             return HttpResponseRedirect(success_redirect)
     errors = []
     if request.method == 'POST':
         if merge:
+            logging.debug('Using mergeloginform, email is %' % request.GET.get('email'))
             form = MergeLoginForm(request.POST, request=request)
         else:
             form = LoginForm(request.POST, request=request)
@@ -60,15 +69,20 @@ def login(request, template_name='cas/login.html', success_redirect='/account/',
                         args['service'] = service
                     args = urllib.urlencode(args)
 
-                    return HttpResponseRedirect('%s?%s' % (base_url, args))
+                    url = '%s?%s' % (base_url, args)
+                    logging.debug('Redirecting to %s', url)
+                    return HttpResponseRedirect(url)
             
             if user is not None:
                 if user.is_active:
                     auth_login(request, user)
                     if service is not None:
                         ticket = create_service_ticket(user, service)
-                        return HttpResponseRedirect(service + '?ticket=' + ticket.ticket)
+                        url = service + '?ticket=' + ticket.ticket
+                        logging.debug('Redirecting to %s', url)
+                        return HttpResponseRedirect(url)
                     else:
+                        logging.debug('Redirecting to %s', success_redirect)
                         return HttpResponseRedirect(success_redirect)
                 else:
                     errors.append('This account is disabled.')
@@ -76,9 +90,12 @@ def login(request, template_name='cas/login.html', success_redirect='/account/',
                     errors.append('Incorrect username and/or password.')
     else:
         if merge:
+            logging.debug('Using mergeloginform, email is %' % request.GET.get('email'))
             form = MergeLoginForm(initial={'service': service, 'email': request.GET.get('email')})
         else:
+            logging.debug('Using normal login form.')
             form = LoginForm(initial={'service': service})
+    logging.debug('Rendering response on %s, merge is %s', template_name, merge)
     return render_to_response(template_name, {'form': form, 'errors': errors}, context_instance=RequestContext(request))
 
 
