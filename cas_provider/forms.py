@@ -7,7 +7,7 @@ class LoginForm(forms.Form):
     email = forms.CharField(max_length=255)
     password = forms.CharField(widget=forms.PasswordInput)
     service = forms.CharField(widget=forms.HiddenInput, required=False)
-    remember_me = forms.BooleanField(required=False)
+    remember_me = forms.BooleanField(required=False, label="Keep me signed in")
 
     def __init__(self, *args, **kwargs):
         # renew = kwargs.pop('renew', None)
