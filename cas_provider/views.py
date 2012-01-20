@@ -1,4 +1,5 @@
 import logging
+logger = logging.getLogger('cas_provider.views')
 import urllib
 
 from django.http import HttpResponse, HttpResponseRedirect
@@ -12,6 +13,10 @@ from forms import LoginForm, MergeLoginForm
 from models import ServiceTicket
 from utils import create_service_ticket
 from exceptions import SameEmailMismatchedPasswords
+
+#FIXME: Remove this dependency
+from accounts.models import IdentifierHistory
+from django.contrib.auth.models import User
 
 __all__ = ['login', 'validate', 'logout']
 
@@ -126,14 +131,23 @@ def socialauth_login(request, template_name='cas/login.html', success_redirect='
 def validate(request):
     service = request.GET.get('service', None)
     ticket_string = request.GET.get('ticket', None)
+    logger.debug("service: %s"% service)
+    logger.debug("ticket_string: %s"% ticket_string)
     if service is not None and ticket_string is not None:
         try:
             ticket = ServiceTicket.objects.get(ticket=ticket_string)
             username = ticket.user.username
             ticket.delete()
-            return HttpResponse("yes\n%s\n" % username)
-        except:
-            pass
+
+            histories = IdentifierHistory.objects.filter(user__email__iexact=ticket.user.email)
+            histories = '\n'.join(histories.values_list('identifier', flat=True))
+            histories = '%s\n' % histories if histories else ''
+
+            return HttpResponse("yes\n%s\n%s" % (username, histories))
+
+        except Exception as e:
+            logger.exception("Got an exception!: %s"% e)
+
     return HttpResponse("no\n\n")
     
 
