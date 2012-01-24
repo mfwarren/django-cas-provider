@@ -14,9 +14,7 @@ from models import ServiceTicket
 from utils import create_service_ticket
 from exceptions import SameEmailMismatchedPasswords
 
-#FIXME: Remove this dependency
-from accounts.models import IdentifierHistory
-from django.contrib.auth.models import User
+from . import signals
 
 __all__ = ['login', 'validate', 'logout']
 
@@ -139,9 +137,8 @@ def validate(request):
             username = ticket.user.username
             ticket.delete()
 
-            histories = IdentifierHistory.objects.filter(user__email__iexact=ticket.user.email)
-            histories = '\n'.join(histories.values_list('identifier', flat=True))
-            histories = '%s\n' % histories if histories else ''
+            results = signals.on_cas_collect_histories.send(sender=validate, for_email=ticket.user.email)
+            histories = '\n'.join('\n'.join(rs) for rc, rs in results)
 
             return HttpResponse("yes\n%s\n%s" % (username, histories))
 
