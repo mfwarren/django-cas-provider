@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
 from django.core.urlresolvers import reverse
 from django.conf import settings
-import facebook
+# import facebook
 
 from socialauth.lib import oauthtwitter
 from socialauth.models import OpenidProfile as UserAssociation, TwitterUserProfile, FacebookUserProfile, LinkedInUserProfile, AuthMeta
