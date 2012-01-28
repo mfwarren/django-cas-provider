@@ -55,6 +55,7 @@ class OpenIdBackend:
                 valid_username = True
             if not user:
                 user = User.objects.create_user(username, email or '')
+                user.set_unusable_password()
                 user.save()
     
             #create openid association
@@ -100,8 +101,7 @@ class LinkedInBackend:
             username = 'LI-%s' % profile.id
             if not user:
                 user = User(username =  username)
-                temp_password = User.objects.make_random_password(length=12)
-                user.set_password(temp_password)
+                user.set_unusable_password()
                 user.first_name, user.last_name = profile.firstname, profile.lastname
                 user.email = '{0}@socialauth'.format(username)
                 user.save()
@@ -140,8 +140,7 @@ class TwitterBackend:
             username = "TW-{0}".format(screen_name)
             if not user:
                 user = User(username =  username)
-                temp_password = User.objects.make_random_password(length=12)
-                user.set_password(temp_password)
+                user.set_unusable_password()
                 name_data = userinfo.name.split()
                 try:
                     first_name, last_name = name_data[0], ' '.join(name_data[1:])
@@ -218,6 +217,7 @@ class FacebookBackend:
                 user.first_name = fb_data['first_name']
                 user.last_name = fb_data['last_name']
                 user.email = username + "@socialauth"
+                user.set_unusable_password()
                 user.save()
 
             fb_profile = FacebookUserProfile(facebook_uid=uid, user=user)
