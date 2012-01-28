@@ -26,7 +26,6 @@ LINKEDIN_CONSUMER_SECRET = getattr(settings, 'LINKEDIN_CONSUMER_SECRET', '')
 
 class OpenIdBackend:
     def authenticate(self, openid_key, request, provider, user=None):
-        request.auth_method = 'OpenID'
         try:
             assoc = UserAssociation.objects.get(openid_key = openid_key)
             return assoc.user
@@ -92,7 +91,6 @@ class LinkedInBackend:
         
         profile = ProfileApi(linkedin).getMyProfile(access_token = linkedin_access_token)
 
-        request.auth_method = 'LinkedIn'
         try:
             user_profile = LinkedInUserProfile.objects.get(linkedin_uid = profile.id)
             user = user_profile.user
@@ -133,7 +131,6 @@ class TwitterBackend:
 
         screen_name = userinfo.screen_name
         
-        request.auth_method = 'Twitter'
         try:
             user_profile = TwitterUserProfile.objects.get(screen_name = screen_name)
             user = user_profile.user
@@ -171,7 +168,6 @@ class FacebookBackend:
     def authenticate(self, request, user=None):
         cookie = facebook.get_user_from_cookie(request.COOKIES,FACEBOOK_APP_ID,FACEBOOK_SECRET_KEY)
 
-        request.auth_method = 'Facebook'
         if cookie:
             uid = cookie['uid']
             access_token = cookie['access_token']
