@@ -15,6 +15,15 @@ class AuthMeta(models.Model):
     is_email_filled = models.BooleanField(default = False)
     is_profile_modified = models.BooleanField(default = False)
 
+class OpenidProfileManager(models.Manager):
+    def needs_google_crossdomain_merge(self, openid_key):
+        try:
+            assoc = self.get(openid_key=openid_key)
+        except OpenidProfile.DoesNotExist:
+            return False
+        else:
+            return assoc.needs_google_crossdomain_merge
+
 class OpenidProfile(models.Model):
     """A class associating an User to a Openid"""
     openid_key = models.CharField(max_length=200,unique=True, db_index = True)
@@ -24,7 +33,9 @@ class OpenidProfile(models.Model):
     #Values which we get from openid.sreg
     email = models.EmailField()
     nickname = models.CharField(max_length = 100)
+    needs_google_crossdomain_merge = models.BooleanField(default=False)
     
+    objects = OpenidProfileManager()
     
     def __unicode__(self):
         return unicode(self.openid_key)

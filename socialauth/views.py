@@ -31,6 +31,8 @@ from socialauth.lib import oauthgoogle
 from socialauth.lib.facebook import get_user_info, get_facebook_signature, \
                             get_friends, get_friends_via_fql
 from socialauth.lib.linkedin import *
+from socialauth.auth_backends import OpenIdBackend
+from socialauth import signals
 
 from oauth import oauth
 from re import escape
@@ -174,7 +176,6 @@ def gmail_login(request):
 def gmail_login_complete(request):
     pass
 
-
 def yahoo_login(request):
     request.session['openid_provider'] = 'Yahoo'
     return begin(request, user_url='http://yahoo.com/')
@@ -194,6 +195,7 @@ def openid_done(request, provider=None):
         #check for already existing associations
         openid_key = str(request.openid)
         if request.user and request.user.is_authenticated():
+
             res = authenticate(openid_key=openid_key, request=request, provider = provider, user=request.user)
             if res:
                 return HttpResponseRedirect(settings.ADD_LOGIN_REDIRECT_URL + '?add_login=true')
@@ -202,9 +204,35 @@ def openid_done(request, provider=None):
         else:
             #authenticate and login
             user = authenticate(openid_key=openid_key, request=request, provider = provider)
+            openid_profile = OpenidProfile.objects.get(openid_key=openid_key)
+
+            # From Apocalypse
+            if user and request.session.get('consolidating_google', False):
+                if request.session['google_email'] == openid_profile.email:
+                    federation_openid_key = request.session['google_openid_key']
+                    del request.session['consolidating_google']
+                    del request.session['google_email']
+                    del request.session['google_openid_key']
+
+                    #FIXME:  Is this secure?
+                    return HttpResponseRedirect('http://federation:8111/account/social/consolidate/google/complete/' \
+                            + '?' + urllib.urlencode({'username': user.username,
+                                                      'email': openid_profile.email,
+                                                      'openid_key': federation_openid_key }))
+
+                else:
+                    return HttpResponseRedirect(settings.CONSOLIDATE_GOOGLE_FAILED)
+
+            # From Federation
+            if user and OpenidProfile.objects.needs_google_crossdomain_merge(openid_key):
+                session = dict(request.session)
+                login(request, user)
+                restore_session(request, session)
+                return HttpResponseRedirect(settings.CONSOLIDATE_GOOGLE_LOGIN \
+                        + '?' + urllib.urlencode({'email': openid_profile.email, 'openid_key': openid_key}))
             
             # if user is authenticated then login user through CAS
-            if user:
+            elif user:
                 # Restore unique session keys from old session
                 session = dict(request.session)
                 login(request, user)
@@ -325,3 +353,49 @@ def social_logout(request):
         return HttpResponseRedirect(settings.LOGOUT_REDIRECT_URL)
     else:
         return logout_response
+
+
+# On Apocalypse
+def consolidate_google(request):
+    """ Store the User information generated from Federation
+        It will be sent back to Federation after authenticating
+        through Google.  This cycle is necessary to demand the
+        Email from Google (OpenID) which will be used as a
+        Identifier back on Federation.
+    """
+
+    request.session['consolidating_google'] = True
+    request.session['google_email'] = request.GET['email']
+    request.session['google_openid_key'] = request.GET['openid_key']
+
+    return HttpResponseRedirect(reverse('socialauth_google_login'))
+
+# On Federation (redirect from Apocalypse)
+def consolidate_google_complete(request):
+    """ Verifies params to the current User
+        Completes the Google merge
+        Adds the identifier from the collaborating service
+    """
+
+    username = request.GET.get('username', None)
+    email = request.GET.get('email', None)
+    openid_key = request.GET.get('openid_key', None)
+
+    try:
+        openid_profile = OpenidProfile.objects.get(user=request.user)
+    except OpenidProfile.DoesNotExist:
+        pass
+    else:
+        if openid_profile.email == email and openid_profile.openid_key == openid_key:
+            signals.consolidate_google_complete_add_identifer.send(sender=consolidate_google_complete,
+                                                                   identifier=username, user=request.user)
+            openid_profile.needs_google_crossdomain_merge = False
+            openid_profile.save()
+            return HttpResponseRedirect('/account/')
+
+    return HttpResponseRedirect(reverse('consolidate_google_failed'))
+
+# On Federation
+def consolidate_google_failed(request):
+    return HttpResponse('Failed.')
+
