@@ -5,7 +5,7 @@ from django.conf import settings
 # import facebook
 
 from socialauth.lib import oauthtwitter
-from socialauth.models import OpenidProfile as UserAssociation, TwitterUserProfile, FacebookUserProfile, LinkedInUserProfile, AuthMeta
+from socialauth.models import OpenidProfile, TwitterUserProfile, FacebookUserProfile, LinkedInUserProfile, AuthMeta
 from socialauth.lib.linkedin import *
 import urllib
 import random
@@ -27,9 +27,9 @@ LINKEDIN_CONSUMER_SECRET = getattr(settings, 'LINKEDIN_CONSUMER_SECRET', '')
 class OpenIdBackend:
     def authenticate(self, openid_key, request, provider, user=None):
         try:
-            assoc = UserAssociation.objects.get(openid_key = openid_key)
+            assoc = OpenidProfile.objects.get(openid_key = openid_key)
             return assoc.user
-        except UserAssociation.DoesNotExist:
+        except OpenidProfile.DoesNotExist:
             #fetch if openid provider provides any simple registration fields
             nickname = None
             email = None
@@ -37,8 +37,8 @@ class OpenIdBackend:
                 email = request.openid.sreg.get('email')
                 nickname = request.openid.sreg.get('nickname')
             elif request.openid and request.openid.ax:
-                email = request.openid.ax.get('email')
-                nickname = request.openid.ax.get('nickname')
+                email = request.openid.ax.getSingle('http://axschema.org/contact/email', None)
+
             if nickname is None :
                 nickname =  ''.join([random.choice('abcdefghijklmnopqrstuvwxyz') for i in xrange(10)])
             
@@ -59,9 +59,11 @@ class OpenIdBackend:
                 user.save()
     
             #create openid association
-            assoc = UserAssociation()
+            assoc = OpenidProfile()
             assoc.openid_key = openid_key
             assoc.user = user
+            if provider == 'Google':
+                assoc.needs_google_crossdomain_merge = True
             if email:
                 assoc.email = email
             if nickname:
