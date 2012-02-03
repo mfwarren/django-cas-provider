@@ -135,6 +135,9 @@ def validate(request):
     if service is not None and ticket_string is not None:
         try:
             ticket = ServiceTicket.objects.get(ticket=ticket_string)
+        except ServiceTicket.DoesNotExist:
+            logger.exception("Tried to validate with an invalid ticket: %s / %s", ticket_string, service)
+        else:
             username = ticket.user.username
             ticket.delete()
 
@@ -142,9 +145,6 @@ def validate(request):
             histories = '\n'.join('\n'.join(rs) for rc, rs in results)
 
             return HttpResponse("yes\n%s\n%s" % (username, histories))
-
-        except Exception as e:
-            logger.exception("Got an exception!: %s"% e)
 
     return HttpResponse("no\n\n")
     
