@@ -142,7 +142,7 @@ def validate(request):
 
             results = signals.on_cas_collect_histories.send(sender=validate, for_email=ticket.user.email)
             histories = '\n'.join('\n'.join(rs) for rc, rs in results)
-
+            logger.info('Validated %s %s', username, "(also %s)" % histories if histories else '')
             return HttpResponse("yes\n%s\n%s" % (username, histories))
 
     return HttpResponse("no\n\n")
