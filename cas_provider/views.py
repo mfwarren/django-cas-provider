@@ -130,13 +130,12 @@ def socialauth_login(request, template_name='cas/login.html', success_redirect='
 def validate(request):
     service = request.GET.get('service', None)
     ticket_string = request.GET.get('ticket', None)
-    logger.debug("service: %s"% service)
-    logger.debug("ticket_string: %s"% ticket_string)
+    logger.info('Validating ticket %s for %s', ticket_string, service)
     if service is not None and ticket_string is not None:
         try:
             ticket = ServiceTicket.objects.get(ticket=ticket_string)
         except ServiceTicket.DoesNotExist:
-            logger.exception("Tried to validate with an invalid ticket: %s / %s", ticket_string, service)
+            logger.exception("Tried to validate with an invalid ticket %s for %s", ticket_string, service)
         else:
             username = ticket.user.username
             ticket.delete()
