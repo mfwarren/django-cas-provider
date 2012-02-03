@@ -47,6 +47,7 @@ def login(request, template_name='cas/login.html', success_redirect='/account/',
             form = LoginForm(request.POST, request=request)
 
         if form.is_valid():
+            service = form.cleaned_data.get('service', None)
             try:
                 auth_args = dict(username=form.cleaned_data['email'],
                                  password=form.cleaned_data['password'])
