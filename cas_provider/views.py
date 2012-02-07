@@ -35,7 +35,7 @@ def login(request, template_name='cas/login.html', success_redirect='/account/',
             else:
                 url = service + '&ticket=' + ticket.ticket
                 logging.debug('Redirecting to %s', url)
-                return HttpResponseRedirect()
+                return HttpResponseRedirect(url)
         else:
             logging.debug('Redirecting to %s', success_redirect)
             return HttpResponseRedirect(success_redirect)
@@ -136,6 +136,8 @@ def validate(request):
             ticket = ServiceTicket.objects.get(ticket=ticket_string)
         except ServiceTicket.DoesNotExist:
             logger.exception("Tried to validate with an invalid ticket %s for %s", ticket_string, service)
+        except Exception as e:
+            logger.exception('Got an exception: %s', e)
         else:
             username = ticket.user.username
             ticket.delete()
@@ -145,6 +147,7 @@ def validate(request):
             logger.info('Validated %s %s', username, "(also %s)" % histories if histories else '')
             return HttpResponse("yes\n%s\n%s" % (username, histories))
 
+    logger.info('Validation failed.')
     return HttpResponse("no\n\n")
     
 
