@@ -94,6 +94,12 @@ def login(request, template_name='cas/login.html', success_redirect='/account/',
         if not user.is_active:
             errors.append('This account is disabled.')
         else:
+            # Send the on_cas_login signal. If we get an HttpResponse, return that.
+            for receiver, response in signals.on_cas_login(sender=login, request=request,
+                                                           kwargs=kwargs):
+                if isinstance(response, HttpResponse):
+                    return response
+            
             if service is None:
                 # Try and pull the service off the session
                 service = request.session.pop('service', service)
