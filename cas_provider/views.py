@@ -26,7 +26,8 @@ def _build_service_url(service, ticket):
         return service + '&ticket=' + ticket
 
 
-def login(request, template_name='cas/login.html', success_redirect='/account/', merge=False):
+def login(request, template_name='cas/login.html', success_redirect='/account/', **kwargs):
+    merge = kwargs.get('merge', False)
     logging.debug('CAS Provider Login view. Method is %s, merge is %s, template is %s.',
                   request.method, merge, template_name)
 
