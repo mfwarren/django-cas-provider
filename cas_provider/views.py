@@ -118,11 +118,7 @@ def socialauth_login(request, template_name='cas/login.html', success_redirect='
     """
     user = request.user
     user.backend = 'django.contrib.auth.backends.ModelBackend'
-    if 'service' in request.session:
-        service = request.session['service']
-        del request.session['service']
-    else:
-        service = '/'
+    service = request.session.pop('service', '/')
     errors = []
     if user is not None:
         if user.is_active:
