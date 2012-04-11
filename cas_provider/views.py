@@ -19,6 +19,13 @@ from . import signals
 __all__ = ['login', 'validate', 'logout']
 
 
+def _build_service_url(service, ticket):
+    if service.find('?') == -1:
+        return service + '?ticket=' + ticket.ticket
+    else:
+        return service + '&ticket=' + ticket.ticket
+
+
 def login(request, template_name='cas/login.html', success_redirect='/account/', merge=False):
     logging.debug('CAS Provider Login view. Method is %s, merge is %s, template is %s.',
                   request.method, merge, template_name)
@@ -82,6 +89,7 @@ def login(request, template_name='cas/login.html', success_redirect='/account/',
             form = LoginForm(initial={'service': service})
 
     if user is not None and user.is_authenticated():
+        # We have an authenticated user.
         if not user.is_active:
             errors.append('This account is disabled.')
         else:
@@ -90,16 +98,15 @@ def login(request, template_name='cas/login.html', success_redirect='/account/',
                 logging.debug('Redirecting to %s', success_redirect)
                 return HttpResponseRedirect(success_redirect)
             else:
-                # Create a service ticket and redirect.
+                # Create a service ticket and redirect to the service.
                 ticket = create_service_ticket(request.user, service)
-                if service.find('?') == -1:
-                    url = service + '?ticket=' + ticket.ticket
-                    logging.debug('Redirecting to %s', url)
-                    return HttpResponseRedirect(url)
-                else:
-                    url = service + '&ticket=' + ticket.ticket
-                    logging.debug('Redirecting to %s', url)
-                    return HttpResponseRedirect(url)
+                if 'service' in request.session:
+                    # Don't need this any more.
+                    del request.session['service']
+
+                url = _build_service_url(service, ticket.ticket)
+                logging.debug('Redirecting to %s', url)
+                return HttpResponseRedirect(url)
 
     logging.debug('Rendering response on %s, merge is %s', template_name, merge)
     return render_to_response(template_name, {'form': form, 'errors': errors}, context_instance=RequestContext(request))
@@ -111,7 +118,7 @@ def socialauth_login(request, template_name='cas/login.html', success_redirect='
     """
     user = request.user
     user.backend = 'django.contrib.auth.backends.ModelBackend'
-    if request.session.has_key('service'):
+    if 'service' in request.session:
         service = request.session['service']
         del request.session['service']
     else:
@@ -122,7 +129,7 @@ def socialauth_login(request, template_name='cas/login.html', success_redirect='
             auth_login(request, user)
             if service is not None:
                 ticket = create_service_ticket(user, service)
-                return HttpResponseRedirect(service + '?ticket=' + ticket.ticket)
+                return HttpResponseRedirect(_build_service_url(service, ticket.ticket))
             else:
                 return HttpResponseRedirect(success_redirect)
         else:
