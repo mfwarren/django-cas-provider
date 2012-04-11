@@ -94,6 +94,10 @@ def login(request, template_name='cas/login.html', success_redirect='/account/',
             errors.append('This account is disabled.')
         else:
             if service is None:
+                # Try and pull the service off the session
+                service = request.session.pop('service', service)
+            
+            if service is None:
                 # Normal internal success redirection.
                 logging.debug('Redirecting to %s', success_redirect)
                 return HttpResponseRedirect(success_redirect)
