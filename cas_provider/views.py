@@ -22,24 +22,17 @@ __all__ = ['login', 'validate', 'logout']
 def login(request, template_name='cas/login.html', success_redirect='/account/', merge=False):
     logging.debug('CAS Provider Login view. Method is %s, merge is %s, template is %s.',
                   request.method, merge, template_name)
+
     service = request.GET.get('service', None)
     if service is not None:
+        # Save the service on the session, for later use if we end up
+        # in one of the more complicated workflows.
         request.session['service'] = service
-    if request.user.is_authenticated():
-        if service is not None:
-            ticket = create_service_ticket(request.user, service)
-            if service.find('?') == -1:
-                url = service + '?ticket=' + ticket.ticket
-                logging.debug('Redirecting to %s', url)
-                return HttpResponseRedirect(url)
-            else:
-                url = service + '&ticket=' + ticket.ticket
-                logging.debug('Redirecting to %s', url)
-                return HttpResponseRedirect(url)
-        else:
-            logging.debug('Redirecting to %s', success_redirect)
-            return HttpResponseRedirect(success_redirect)
+
+    user = request.user
+
     errors = []
+
     if request.method == 'POST':
         if merge:
             form = MergeLoginForm(request.POST, request=request)
@@ -76,26 +69,38 @@ def login(request, template_name='cas/login.html', success_redirect='/account/',
                     logging.debug('Redirecting to %s', url)
                     return HttpResponseRedirect(url)
             
-            if user is not None:
+            if user is None:
+                errors.append('Incorrect username and/or password.')
+            else:
                 if user.is_active:
                     auth_login(request, user)
-                    if service is not None:
-                        ticket = create_service_ticket(user, service)
-                        url = service + '?ticket=' + ticket.ticket
-                        logging.debug('Redirecting to %s', url)
-                        return HttpResponseRedirect(url)
-                    else:
-                        logging.debug('Redirecting to %s', success_redirect)
-                        return HttpResponseRedirect(success_redirect)
-                else:
-                    errors.append('This account is disabled.')
-            else:
-                    errors.append('Incorrect username and/or password.')
-    else:
+
+    else:  # Not a POST...
         if merge:
             form = MergeLoginForm(initial={'service': service, 'email': request.GET.get('email')})
         else:
             form = LoginForm(initial={'service': service})
+
+    if user is not None and user.is_authenticated():
+        if not user.is_active:
+            errors.append('This account is disabled.')
+        else:
+            if service is None:
+                # Normal internal success redirection.
+                logging.debug('Redirecting to %s', success_redirect)
+                return HttpResponseRedirect(success_redirect)
+            else:
+                # Create a service ticket and redirect.
+                ticket = create_service_ticket(request.user, service)
+                if service.find('?') == -1:
+                    url = service + '?ticket=' + ticket.ticket
+                    logging.debug('Redirecting to %s', url)
+                    return HttpResponseRedirect(url)
+                else:
+                    url = service + '&ticket=' + ticket.ticket
+                    logging.debug('Redirecting to %s', url)
+                    return HttpResponseRedirect(url)
+
     logging.debug('Rendering response on %s, merge is %s', template_name, merge)
     return render_to_response(template_name, {'form': form, 'errors': errors}, context_instance=RequestContext(request))
 
@@ -123,7 +128,7 @@ def socialauth_login(request, template_name='cas/login.html', success_redirect='
         else:
             errors.append('This account is disabled.')
     else:
-            errors.append('Incorrect username and/or password.')
+        errors.append('Incorrect username and/or password.')
     return render_to_response(template_name, {'errors': errors}, context_instance=RequestContext(request))
 
 
