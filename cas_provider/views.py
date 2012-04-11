@@ -21,9 +21,9 @@ __all__ = ['login', 'validate', 'logout']
 
 def _build_service_url(service, ticket):
     if service.find('?') == -1:
-        return service + '?ticket=' + ticket.ticket
+        return service + '?ticket=' + ticket
     else:
-        return service + '&ticket=' + ticket.ticket
+        return service + '&ticket=' + ticket
 
 
 def login(request, template_name='cas/login.html', success_redirect='/account/', merge=False):
