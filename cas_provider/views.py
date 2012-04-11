@@ -116,29 +116,6 @@ def login(request, template_name='cas/login.html', success_redirect='/account/',
     return render_to_response(template_name, {'form': form, 'errors': errors}, context_instance=RequestContext(request))
 
 
-def socialauth_login(request, template_name='cas/login.html', success_redirect='/account/'):
-    """ Similiar to login but user has been authenticated already through social auth.
-        This step authenticates the login and generates a service ticket.
-    """
-    user = request.user
-    user.backend = 'django.contrib.auth.backends.ModelBackend'
-    service = request.session.pop('service', '/')
-    errors = []
-    if user is not None:
-        if user.is_active:
-            auth_login(request, user)
-            if service is not None:
-                ticket = create_service_ticket(user, service)
-                return HttpResponseRedirect(_build_service_url(service, ticket.ticket))
-            else:
-                return HttpResponseRedirect(success_redirect)
-        else:
-            errors.append('This account is disabled.')
-    else:
-        errors.append('Incorrect username and/or password.')
-    return render_to_response(template_name, {'errors': errors}, context_instance=RequestContext(request))
-
-
 def validate(request):
     service = request.GET.get('service', None)
     ticket_string = request.GET.get('ticket', None)
