@@ -1,0 +1,130 @@
+[
+  {
+    "pk": 1, 
+    "model": "auth.group", 
+    "fields": {
+      "name": "editor", 
+      "permissions": []
+    }
+  }, 
+  {
+    "pk": 2, 
+    "model": "auth.group", 
+    "fields": {
+      "name": "author", 
+      "permissions": []
+    }
+  }, 
+  {
+    "pk": 1, 
+    "model": "auth.user", 
+    "fields": {
+      "username": "root", 
+      "first_name": "", 
+      "last_name": "", 
+      "is_active": true, 
+      "is_superuser": true, 
+      "is_staff": true, 
+      "last_login": "2011-04-24 11:29:11", 
+      "groups": [], 
+      "user_permissions": [], 
+      "password": "sha1$602c5$ba8608296f6bfcb352e978084b337a90d586ecc3", 
+      "email": "root@example.com", 
+      "date_joined": "2010-07-04 13:33:14"
+    }
+  }, 
+  {
+    "pk": 26, 
+    "model": "auth.user", 
+    "fields": {
+      "username": "active", 
+      "first_name": "", 
+      "last_name": "", 
+      "is_active": true, 
+      "is_superuser": false, 
+      "is_staff": false, 
+      "last_login": "2011-04-01 12:42:53", 
+      "groups": [], 
+      "user_permissions": [], 
+      "password": "sha1$7dfb4$d19f8340a01b597089dfde6dc17bc5288c1f863e", 
+      "email": "active@example.com", 
+      "date_joined": "2011-04-01 11:12:45"
+    }
+  }, 
+  {
+    "pk": 30, 
+    "model": "auth.user", 
+    "fields": {
+      "username": "author", 
+      "first_name": "", 
+      "last_name": "", 
+      "is_active": true, 
+      "is_superuser": false, 
+      "is_staff": true, 
+      "last_login": "2011-04-24 11:32:16", 
+      "groups": [
+        2
+      ], 
+      "user_permissions": [], 
+      "password": "sha1$6c580$01509bea19e3ade9f1bcf303205a7cb10ce6762d", 
+      "email": "", 
+      "date_joined": "2011-04-24 11:32:16"
+    }
+  }, 
+  {
+    "pk": 29, 
+    "model": "auth.user", 
+    "fields": {
+      "username": "editor", 
+      "first_name": "", 
+      "last_name": "", 
+      "is_active": true, 
+      "is_superuser": false, 
+      "is_staff": true, 
+      "last_login": "2011-04-24 11:31:50", 
+      "groups": [
+        1
+      ], 
+      "user_permissions": [], 
+      "password": "sha1$3be01$b6aa05c61fc52edae3055c55e160d4cfd4756d91", 
+      "email": "editor@exapmle.com", 
+      "date_joined": "2011-04-24 11:31:50"
+    }
+  }, 
+  {
+    "pk": 27, 
+    "model": "auth.user", 
+    "fields": {
+      "username": "nonactive", 
+      "first_name": "", 
+      "last_name": "", 
+      "is_active": false, 
+      "is_superuser": false, 
+      "is_staff": false, 
+      "last_login": "2011-04-24 11:31:00", 
+      "groups": [], 
+      "user_permissions": [], 
+      "password": "sha1$0bf10$d60f146d15e4fe3cb0de5a607a17902d0f63a95c", 
+      "email": "", 
+      "date_joined": "2011-04-24 11:31:00"
+    }
+  }, 
+  {
+    "pk": 28, 
+    "model": "auth.user", 
+    "fields": {
+      "username": "staff", 
+      "first_name": "", 
+      "last_name": "", 
+      "is_active": true, 
+      "is_superuser": false, 
+      "is_staff": true, 
+      "last_login": "2011-04-24 11:31:26", 
+      "groups": [], 
+      "user_permissions": [], 
+      "password": "sha1$5df85$bb4c1894a866fb86465d28831000af20316233d5", 
+      "email": "staff@example.com", 
+      "date_joined": "2011-04-24 11:31:26"
+    }
+  }
+]

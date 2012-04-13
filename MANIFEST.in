@@ -1,0 +1,5 @@
+recursive-include cas_provider/templates *.html
+recursive-include cas_provider/fixtures *
+include AUTHORS.txt
+include README.rst
+include LICENSE

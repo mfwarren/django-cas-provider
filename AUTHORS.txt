@@ -1,0 +1,6 @@
+Chris Williams <chris@nitron.org>
+Alex Kamedov <alex@kamedov.ru>
+Łukasz Rekucki <lrekucki@gmail.com>
+Marek Stepniowski <marek@stepniowski.com>
+Fred Wenzel <fwenzel@mozilla.com>
+Sebastian Annies <Sebastian.Annies@castlabs.com>

@@ -1,0 +1,71 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Alex Kamedov <alex@kamedov.ru>, 2011.
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2011-04-24 18:51+0600\n"
+"PO-Revision-Date: 2011-04-07 12:01+0600\n"
+"Last-Translator: Volf <alex@kamedov.ru>\n"
+"Language-Team: delux\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
+"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"X-Generator: Virtaal 0.6.1\n"
+
+#: forms.py:14
+msgid "username"
+msgstr "имя пользователя"
+
+#: forms.py:15
+msgid "password"
+msgstr "пароль"
+
+#: forms.py:30
+msgid "Login ticket expired. Please try again."
+msgstr "Истек срок действия билета входа. Пожалуйста, попробуйте еще раз."
+
+#: forms.py:38
+msgid "Incorrect username and/or password."
+msgstr "Неверное имя пользователя и/или пароль."
+
+#: forms.py:40
+msgid "This account is disabled."
+msgstr "Эта учетная запись отключена."
+
+#: models.py:14
+msgid "ticket"
+msgstr "билет"
+
+#: models.py:15
+msgid "created"
+msgstr "создан"
+
+#: models.py:34
+msgid "user"
+msgstr "пользователь"
+
+#: models.py:35
+msgid "service"
+msgstr "сервис"
+
+#: models.py:40
+msgid "Service Ticket"
+msgstr "Билет для сервиса"
+
+#: models.py:41
+msgid "Service Tickets"
+msgstr "Билеты для сервисов"
+
+#: models.py:59
+msgid "Login Ticket"
+msgstr "Билет для входа"
+
+#: models.py:60
+msgid "Login Tickets"
+msgstr "Билеты для входа"

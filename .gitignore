@@ -1,2 +1,9 @@
+# Python garbage
 *.pyc
-django_cas_provider.egg-info/
+*.egg-info
+
+# Mac OS X garbage
+.DS_Store
+
+# PyDev garbage
+.tmp*

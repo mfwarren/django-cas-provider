@@ -1,7 +1,14 @@
 from django import forms
+from django.conf import settings
+from django.contrib.auth import authenticate
+from django.contrib.auth.forms import AuthenticationForm
+from django.forms import ValidationError
+from django.utils.translation import ugettext_lazy as _
+from models import LoginTicket
+import datetime
 
 
-class LoginForm(forms.Form):
+class LoginForm(AuthenticationForm):
     email = forms.CharField(widget=forms.TextInput(attrs={'autofocus': 'autofocus',
                                                           'max_length': '255'}))
     password = forms.CharField(widget=forms.PasswordInput)
