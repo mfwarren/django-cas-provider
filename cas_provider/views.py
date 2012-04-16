@@ -169,7 +169,7 @@ def validate(request):
             username = ticket.user.username
             ticket.delete()
 
-            results = signals.on_cas_collect_histories.send(sender=validate, for_email=ticket.user.email)
+            results = signals.on_cas_collect_histories.send(sender=validate, for_user=ticket.user)
             histories = '\n'.join('\n'.join(rs) for rc, rs in results)
             logger.info('Validated %s %s', username, "(also %s)" % histories if histories else '')
             return HttpResponse("yes\n%s\n%s" % (username, histories))
@@ -340,6 +340,8 @@ def auth_success_response(user, pgt, proxies):
     for receiver, custom in signals.cas_collect_custom_attributes.send(sender=auth_success_response, user=user):
         if custom:
             attrs.update(custom)
+
+    attrs['identifiers'] = [i for r, i in signals.on_cas_collect_histories.send(sender=validate, for_user=user)]
 
     if attrs:
         formatter = get_callable(settings.CAS_CUSTOM_ATTRIBUTES_FORMATER)
