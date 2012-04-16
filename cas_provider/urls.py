@@ -2,7 +2,7 @@ from django.conf.urls.defaults import patterns, url
 
 
 urlpatterns = patterns('cas_provider.views',
-    url(r'^login/merge/', 'login', {'merge': True, 'template_name': 'cas/merge.html'})
+    url(r'^login/merge/', 'login', {'merge': True, 'template_name': 'cas/merge.html'}),
     url(r'^login/?$', 'login', name='cas_login'),
     url(r'^socialauth-login/$', 'socialauth_login', name='cas_socialauth_login'),
     url(r'^validate/?$', 'validate', name='cas_validate'),
