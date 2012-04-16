@@ -247,6 +247,7 @@ def ticket_validate(service, ticket_string, pgtUrl):
                     pgt = None
 
     user = ticket.user
+    ticket.delete()
     return _cas2_sucess_response(user, pgtIouId, proxies)
 
 
