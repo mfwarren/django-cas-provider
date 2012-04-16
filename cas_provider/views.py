@@ -337,10 +337,9 @@ def auth_success_response(user, pgt, proxies):
     username.text = user.username
 
     attrs = {}
-    for receiver, response in signals.cas_collect_custom_attributes.send(sender=auth_success_response, user=user):
-        if response:
-            print "Got custom attributes:", response
-            attrs.update(response)
+    for receiver, custom in signals.cas_collect_custom_attributes.send(sender=auth_success_response, user=user):
+        if custom:
+            attrs.update(custom)
 
     if attrs:
         formatter = get_callable(settings.CAS_CUSTOM_ATTRIBUTES_FORMATER)
