@@ -31,6 +31,7 @@ def ruby_cas(auth_success, attrs):
             element = etree.SubElement(auth_success, CAS + name)
             element.text = value
 
+
 def name_value(auth_success, attrs):
     etree.SubElement(auth_success, CAS + 'attribute', name=u'attraStyle', value=u'Name-Value')
     for name, value in attrs.items():
