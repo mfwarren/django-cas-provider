@@ -336,12 +336,14 @@ def auth_success_response(user, pgt, proxies):
     username = etree.SubElement(auth_success, CAS + 'user')
     username.text = user.username
 
-    if settings.CAS_CUSTOM_ATTRIBUTES_CALLBACK:
-        callback = get_callable(settings.CAS_CUSTOM_ATTRIBUTES_CALLBACK)
-        attrs = callback(user)
-        if len(attrs) > 0:
-            formatter = get_callable(settings.CAS_CUSTOM_ATTRIBUTES_FORMATER)
-            formatter(auth_success, attrs)
+    attrs = {}
+    for receiver, response in signals.cas_collect_custom_attributes.send(user):
+        if response:
+            attrs.update(response)
+
+    if attrs:
+        formatter = get_callable(settings.CAS_CUSTOM_ATTRIBUTES_FORMATER)
+        formatter(auth_success, attrs)
 
     if pgt:
         pgtElement = etree.SubElement(auth_success, CAS + 'proxyGrantingTicket')
