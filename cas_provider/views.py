@@ -343,6 +343,7 @@ def auth_success_response(user, pgt, proxies):
 
     identifiers = [i for sr, rr in signals.on_cas_collect_histories.send(sender=validate, for_user=user)
                    for i in rr]
+
     if identifiers:
         attrs['identifiers'] = identifiers
 

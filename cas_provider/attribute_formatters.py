@@ -11,7 +11,7 @@ def jasig(auth_success, attrs):
     style = etree.SubElement(attributes, CAS + 'attraStyle')
     style.text = u'Jasig'
     for name, value in attrs.items():
-        if isinstance(value, collections.Iterable):
+        if isinstance(value, collections.Iterable) and not isinstance(value, basestring):
             for e in value:
                 element = etree.SubElement(attributes, CAS + name)
                 element.text = e
@@ -24,7 +24,7 @@ def ruby_cas(auth_success, attrs):
     style = etree.SubElement(auth_success, CAS + 'attraStyle')
     style.text = u'RubyCAS'
     for name, value in attrs.items():
-        if isinstance(value, list):
+        if isinstance(value, collections.Iterable) and not isinstance(value, basestring):
             for e in value:
                 element = etree.SubElement(auth_success, CAS + name)
                 element.text = e
@@ -36,7 +36,7 @@ def ruby_cas(auth_success, attrs):
 def name_value(auth_success, attrs):
     etree.SubElement(auth_success, CAS + 'attribute', name=u'attraStyle', value=u'Name-Value')
     for name, value in attrs.items():
-        if isinstance(value, list):
+        if isinstance(value, collections.Iterable) and not isinstance(value, basestring):
             for e in value:
                 etree.SubElement(auth_success, CAS + 'attribute', name=name, value=e)
         else:
