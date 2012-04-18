@@ -1,4 +1,5 @@
 from lxml import etree
+import collections
 
 CAS_URI = 'http://www.yale.edu/tp/cas'
 NSMAP = {'cas': CAS_URI}
@@ -10,7 +11,7 @@ def jasig(auth_success, attrs):
     style = etree.SubElement(attributes, CAS + 'attraStyle')
     style.text = u'Jasig'
     for name, value in attrs.items():
-        if isinstance(value, list):
+        if isinstance(value, collections.Iterable):
             for e in value:
                 element = etree.SubElement(attributes, CAS + name)
                 element.text = e
