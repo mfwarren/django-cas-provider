@@ -341,7 +341,10 @@ def auth_success_response(user, pgt, proxies):
         if custom:
             attrs.update(custom)
 
-    attrs['identifiers'] = [i for r, i in signals.on_cas_collect_histories.send(sender=validate, for_user=user)]
+    identifiers = [i for sr, rr in signals.on_cas_collect_histories.send(sender=validate, for_user=user)
+                   for i in rr]
+    if identifiers:
+        attrs['identifiers'] = identifiers
 
     if attrs:
         formatter = get_callable(settings.CAS_CUSTOM_ATTRIBUTES_FORMATER)
