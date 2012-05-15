@@ -123,6 +123,9 @@ def login(request, template_name='cas/login.html',
                 # Try and pull the service off the session
                 service = request.session.pop('service', service)
             
+            signals.on_cas_login_success.send(sender=login, request=request,
+                                              service=service, **kwargs)
+
             if service is None:
                 # Normal internal success redirection.
                 logging.debug('Redirecting to %s', success_redirect)
