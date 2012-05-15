@@ -8,4 +8,6 @@ on_cas_collect_histories = dispatch.Signal(providing_args=["for_email"])
 
 on_cas_login = dispatch.Signal(providing_args=["request"])
 
+on_cas_login_success = dispatch.Signal(providing_args=["user"])
+
 cas_collect_custom_attributes = dispatch.Signal(providing_args=['user'])
