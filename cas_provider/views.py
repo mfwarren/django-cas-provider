@@ -7,6 +7,10 @@ from urllib import urlencode
 import urllib2
 import urlparse
 
+from django.views.decorators.debug import sensitive_post_parameters
+from django.views.decorators.cache import never_cache
+from django.views.decorators.csrf import csrf_protect
+
 from django.http import HttpResponse, HttpResponseRedirect
 from django.conf import settings
 from django.contrib.auth import login as auth_login, logout as auth_logout
@@ -44,6 +48,9 @@ ERROR_MESSAGES = (
 logger = logging.getLogger(__name__)
 
 
+@sensitive_post_parameters()
+@csrf_protect
+@never_cache
 def login(request, template_name='cas/login.html',
           success_redirect=settings.LOGIN_REDIRECT_URL,
           warn_template_name='cas/warn.html', **kwargs):
