@@ -355,7 +355,8 @@ def auth_success_response(user, pgt, proxies):
                    for i in rr]
 
     if identifiers:
-        attrs['identifiers'] = identifiers
+        # Singular `identifier`, as that is the name of the element tag(s).
+        attrs['identifier'] = identifiers
 
     if attrs:
         formatter = get_callable(settings.CAS_CUSTOM_ATTRIBUTES_FORMATER)
