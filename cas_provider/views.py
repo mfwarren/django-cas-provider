@@ -6,9 +6,12 @@ import logging
 from urllib import urlencode
 import urllib2
 import urlparse
+from functools import wraps
 
+from django.utils.decorators import available_attrs
 from django.views.decorators.debug import sensitive_post_parameters
-from django.views.decorators.cache import never_cache
+from django.views.decorators.cache import cache_control
+from django.utils.cache import patch_cache_control
 from django.views.decorators.csrf import csrf_protect
 
 from django.http import HttpResponse, HttpResponseRedirect
@@ -46,6 +49,24 @@ ERROR_MESSAGES = (
 
 
 logger = logging.getLogger(__name__)
+
+
+_never_cache = cache_control(no_cache=True, must_revalidate=True)
+
+
+def never_cache(view_func):
+    """
+    Decorator that adds headers to a response so that it will
+    never be cached.
+    """
+    @wraps(view_func, assigned=available_attrs(view_func))
+    def _wrapped_view_func(request, *args, **kwargs):
+        response = view_func(request, *args, **kwargs)
+        patch_cache_control(response, no_cache=True,
+                            must_revalidate=True, proxy_revalidate=True)
+        response['Pragma'] = 'no-cache'
+        return response
+    return _wrapped_view_func
 
 
 @sensitive_post_parameters()
@@ -158,6 +179,7 @@ def login(request, template_name='cas/login.html',
     return render_to_response(template_name, {'form': form, 'errors': errors}, context_instance=RequestContext(request))
 
 
+@never_cache
 def validate(request):
     """Validate ticket via CAS v.1 protocol
     """
@@ -188,6 +210,7 @@ def validate(request):
     return HttpResponse("no\n\n")
     
 
+@never_cache
 def logout(request, template_name='cas/logout.html',
            auto_redirect=settings.CAS_AUTO_REDIRECT_AFTER_LOGOUT):
     url = request.GET.get('url', None)
@@ -201,6 +224,7 @@ def logout(request, template_name='cas/logout.html',
         context_instance=RequestContext(request))
 
 
+@never_cache
 def proxy(request):
     targetService = request.GET['targetService']
     pgt_id = request.GET['pgt']
@@ -261,6 +285,7 @@ def ticket_validate(service, ticket_string, pgtUrl):
     return _cas2_sucess_response(user, pgtIouId, proxies)
 
 
+@never_cache
 def service_validate(request):
     """Validate ticket via CAS v.2 protocol"""
     service = request.GET.get('service', None)
@@ -272,6 +297,7 @@ def service_validate(request):
         return ticket_validate(service, ticket_string, pgtUrl)
 
 
+@never_cache
 def proxy_validate(request):
     """Validate ticket via CAS v.2 protocol"""
     service = request.GET.get('service', None)
