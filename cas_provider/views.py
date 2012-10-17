@@ -124,7 +124,7 @@ def login(request, template_name='cas/login.html',
                     url = '%s?%s' % (base_url, args)
                     logging.debug('Redirecting to %s', url)
                     return HttpResponseRedirect(url)
-            
+
             if user is None:
                 errors.append('Incorrect username and/or password.')
             else:
@@ -146,11 +146,11 @@ def login(request, template_name='cas/login.html',
             for receiver, response in signals.on_cas_login.send(sender=login, request=request, **kwargs):
                 if isinstance(response, HttpResponse):
                     return response
-            
+
             if service is None:
                 # Try and pull the service off the session
                 service = request.session.pop('service', service)
-            
+
             signals.on_cas_login_success.send(sender=login, request=request,
                                               service=service, **kwargs)
 
@@ -164,7 +164,7 @@ def login(request, template_name='cas/login.html',
                         'service': service,
                         'warn': False
                     }, context_instance=RequestContext(request))
-                
+
                 # Create a service ticket and redirect to the service.
                 ticket = ServiceTicket.objects.create(service=service, user=user)
                 if 'service' in request.session:
@@ -208,7 +208,7 @@ def validate(request):
 
     logger.info('Validation failed.')
     return HttpResponse("no\n\n")
-    
+
 
 @never_cache
 def logout(request, template_name='cas/logout.html',
