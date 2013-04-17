@@ -241,7 +241,7 @@ def proxy(request):
     pt = ProxyTicket.objects.create(proxyGrantingTicket=proxyGrantingTicket,
         user=proxyGrantingTicket.serviceTicket.user,
         service=targetService)
-    return _cas2_proxy_success(pt.ticket)
+    return _cas2_proxy_success(pt.ticket, service=targetService)
 
 
 def ticket_validate(service, ticket_string, pgtUrl):
@@ -344,7 +344,8 @@ def generate_proxy_granting_ticket(pgt_url, ticket):
     return pgt
 
 
-def _cas2_proxy_success(pt):
+def _cas2_proxy_success(pt, service=None):
+    signals.on_cas_proxy_success.send(sender=proxy, service=service)
     return HttpResponse(proxy_success(pt))
 
 
