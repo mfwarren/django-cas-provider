@@ -208,9 +208,11 @@ def validate(request):
             results = signals.on_cas_collect_histories.send(sender=validate, for_user=ticket.user)
             histories = '\n'.join('\n'.join(rs) for rc, rs in results)
             logger.info('Validated %s %s', username, "(also %s)" % histories if histories else '')
+            signals.on_cas_validation_success.send(sender=validate, version=1, service=service)
             return HttpResponse("yes\n%s\n%s" % (username, histories))
 
     logger.info('Validation failed.')
+    signals.on_cas_validation_failure.send(sender=validate, version=1, service=service)
     return HttpResponse("no\n\n")
 
 
@@ -350,13 +352,14 @@ def _cas2_proxy_success(pt, service=None):
 
 
 def _cas2_success_response(user, pgt=None, proxies=None, service=None):
-    signals.on_cas_validation_success.send(sender=ticket_validate, service=service)
+    signals.on_cas_validation_success.send(sender=ticket_validate, version=2, service=service)
     return HttpResponse(auth_success_response(user, pgt, proxies), mimetype='text/xml')
 
 
 def _cas2_error_response(code, message=None, service=None):
-    signals.on_cas_validation_failure.send(
-        sender=service_validate, code=code, message=message, service=service)
+    signals.on_cas_validation_failure.send(sender=service_validate,
+                                           version=2, code=code,
+                                           message=message, service=service)
     return HttpResponse(u'''<cas:serviceResponse xmlns:cas="http://www.yale.edu/tp/cas">
             <cas:authenticationFailure code="%(code)s">
                 %(message)s
