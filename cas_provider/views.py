@@ -287,7 +287,7 @@ def ticket_validate(service, ticket_string, pgtUrl):
 
     user = ticket.user
     ticket.delete()
-    return _cas2_success_response(user, pgtIouId, proxies)
+    return _cas2_success_response(user, pgtIouId, proxies, service=service)
 
 
 @never_cache
@@ -349,7 +349,8 @@ def _cas2_proxy_success(pt, service=None):
     return HttpResponse(proxy_success(pt))
 
 
-def _cas2_success_response(user, pgt=None, proxies=None):
+def _cas2_success_response(user, pgt=None, proxies=None, service=None):
+    signals.on_cas_validation_success.send(sender=ticket_validate, service=service)
     return HttpResponse(auth_success_response(user, pgt, proxies), mimetype='text/xml')
 
 
