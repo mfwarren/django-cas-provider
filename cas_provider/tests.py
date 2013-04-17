@@ -5,7 +5,7 @@ from xml.etree import ElementTree
 import cas_provider
 from cas_provider.attribute_formatters import CAS, NSMAP
 from cas_provider.models import ServiceTicket
-from cas_provider.views import _cas2_sucess_response, INVALID_TICKET, _cas2_error_response, generate_proxy_granting_ticket
+from cas_provider.views import _cas2_success_response, INVALID_TICKET, _cas2_error_response, generate_proxy_granting_ticket
 from django.contrib.auth.models import User, UserManager
 from django.core.urlresolvers import reverse
 from django.test import TestCase
@@ -66,7 +66,7 @@ class ViewsTest(TestCase):
         user_2 = auth_success.find(CAS + "user", namespaces=NSMAP)
         proxies_1  = auth_success_2.find(CAS + "proxies")
         self.assertIsNone(proxies_1) # there are no proxies. I am issued by a Service Ticket
-        
+
         self.assertEqual(user.text, user_2.text)
 
 
@@ -141,7 +141,7 @@ class ViewsTest(TestCase):
 
 
 
-    
+
     def test_succeessful_login(self):
         response = self._login_user('root', '123')
         self._validate_cas1(response, True)
@@ -191,7 +191,7 @@ class ViewsTest(TestCase):
         response = self._login_user('root', '123')
         response = self._validate_cas2(response, True)
         user = User.objects.get(username=self.username)
-        self.assertEqual(response.content, _cas2_sucess_response(user).content)
+        self.assertEqual(response.content, _cas2_success_response(user).content)
 
     def test_cas2_custom_attrs(self):
         settings.CAS_CUSTOM_ATTRIBUTES_CALLBACK = cas_mapping
