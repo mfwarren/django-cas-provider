@@ -174,6 +174,10 @@ def login(request, template_name='cas/login.html',
                 url = ticket.get_redirect_url()
                 logging.debug('Redirecting to %s', url)
                 return HttpResponseRedirect(url)
+    else:
+        if request.method == 'POST':
+            signals.on_cas_login_failure.send(sender=login, request=request,
+                                              service=service, **kwargs)
 
     logging.debug('Rendering response on %s, merge is %s', template_name, merge)
     return render_to_response(template_name, {'form': form, 'errors': errors}, context_instance=RequestContext(request))
