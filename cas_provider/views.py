@@ -174,6 +174,10 @@ def login(request, template_name='cas/login.html',
                 url = ticket.get_redirect_url()
                 logging.debug('Redirecting to %s', url)
                 return HttpResponseRedirect(url)
+    else:
+        if request.method == 'POST':
+            signals.on_cas_login_failure.send(sender=login, request=request,
+                                              service=service, **kwargs)
 
     logging.debug('Rendering response on %s, merge is %s', template_name, merge)
     return render_to_response(template_name, {'form': form, 'errors': errors}, context_instance=RequestContext(request))
@@ -204,9 +208,11 @@ def validate(request):
             results = signals.on_cas_collect_histories.send(sender=validate, for_user=ticket.user)
             histories = '\n'.join('\n'.join(rs) for rc, rs in results)
             logger.info('Validated %s %s', username, "(also %s)" % histories if histories else '')
+            signals.on_cas_validation_success.send(sender=validate, version=1, service=service)
             return HttpResponse("yes\n%s\n%s" % (username, histories))
 
     logger.info('Validation failed.')
+    signals.on_cas_validation_failure.send(sender=validate, version=1, service=service)
     return HttpResponse("no\n\n")
 
 
@@ -232,12 +238,12 @@ def proxy(request):
     try:
         proxyGrantingTicket = ProxyGrantingTicket.objects.get(ticket=pgt_id)
     except ProxyGrantingTicket.DoesNotExist:
-        return _cas2_error_response(INVALID_TICKET)
+        return _cas2_error_response(INVALID_TICKET, service=targetService)
 
     pt = ProxyTicket.objects.create(proxyGrantingTicket=proxyGrantingTicket,
         user=proxyGrantingTicket.serviceTicket.user,
         service=targetService)
-    return _cas2_proxy_success(pt.ticket)
+    return _cas2_proxy_success(pt.ticket, service=targetService)
 
 
 def ticket_validate(service, ticket_string, pgtUrl):
@@ -252,15 +258,16 @@ def ticket_validate(service, ticket_string, pgtUrl):
         else:
             return _cas2_error_response(INVALID_TICKET,
                 '%(ticket)s is neither Service (ST-...) nor Proxy Ticket (PT-...)' % {
-                    'ticket': ticket_string})
+                    'ticket': ticket_string},
+                service=service)
     except ServiceTicket.DoesNotExist:
-        return _cas2_error_response(INVALID_TICKET)
+        return _cas2_error_response(INVALID_TICKET, service=service)
 
     ticketUrl = urlparse.urlparse(ticket.service)
     serviceUrl = urlparse.urlparse(service)
 
     if not(ticketUrl.hostname == serviceUrl.hostname and ticketUrl.path == serviceUrl.path and ticketUrl.port == serviceUrl.port):
-        return _cas2_error_response(INVALID_SERVICE)
+        return _cas2_error_response(INVALID_SERVICE, service=service)
 
     pgtIouId = None
     proxies = ()
@@ -282,7 +289,7 @@ def ticket_validate(service, ticket_string, pgtUrl):
 
     user = ticket.user
     ticket.delete()
-    return _cas2_sucess_response(user, pgtIouId, proxies)
+    return _cas2_success_response(user, pgtIouId, proxies, service=service)
 
 
 @never_cache
@@ -292,7 +299,7 @@ def service_validate(request):
     ticket_string = request.GET.get('ticket', None)
     pgtUrl = request.GET.get('pgtUrl', None)
     if ticket_string.startswith('PT-'):
-        return _cas2_error_response(INVALID_TICKET, "serviceValidate cannot verify proxy tickets")
+        return _cas2_error_response(INVALID_TICKET, "serviceValidate cannot verify proxy tickets", service=service)
     else:
         return ticket_validate(service, ticket_string, pgtUrl)
 
@@ -339,15 +346,20 @@ def generate_proxy_granting_ticket(pgt_url, ticket):
     return pgt
 
 
-def _cas2_proxy_success(pt):
+def _cas2_proxy_success(pt, service=None):
+    signals.on_cas_proxy_success.send(sender=proxy, service=service)
     return HttpResponse(proxy_success(pt))
 
 
-def _cas2_sucess_response(user, pgt=None, proxies=None):
+def _cas2_success_response(user, pgt=None, proxies=None, service=None):
+    signals.on_cas_validation_success.send(sender=ticket_validate, version=2, service=service)
     return HttpResponse(auth_success_response(user, pgt, proxies), mimetype='text/xml')
 
 
-def _cas2_error_response(code, message=None):
+def _cas2_error_response(code, message=None, service=None):
+    signals.on_cas_validation_failure.send(sender=service_validate,
+                                           version=2, code=code,
+                                           message=message, service=service)
     return HttpResponse(u'''<cas:serviceResponse xmlns:cas="http://www.yale.edu/tp/cas">
             <cas:authenticationFailure code="%(code)s">
                 %(message)s
