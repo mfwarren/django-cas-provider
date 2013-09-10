@@ -1,5 +1,5 @@
 import logging
-from lxml import etree
+import xml.etree.ElementTree as etree
 from urllib import urlencode
 import urllib2
 import urlparse
@@ -9,7 +9,7 @@ from django.core.urlresolvers import get_callable
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template import RequestContext
-from cas_provider.attribute_formatters import NSMAP, CAS
+from cas_provider.attribute_formatters import CAS, CAS_URI
 from cas_provider.models import ProxyGrantingTicket, ProxyTicket
 from forms import LoginForm
 from models import ServiceTicket, LoginTicket
@@ -174,6 +174,7 @@ def service_validate(request):
 
 def proxy_validate(request):
     """Validate ticket via CAS v.2 protocol"""
+    
     service = request.GET.get('service', None)
     ticket_string = request.GET.get('ticket', None)
     pgtUrl = request.GET.get('pgtUrl', None)
@@ -214,7 +215,7 @@ def generate_proxy_granting_ticket(pgt_url, ticket):
 
 
 def _cas2_proxy_success(pt):
-    return HttpResponse(proxy_success(pt))
+    return HttpResponse(proxy_success(pt), mimetype='text/xml')
 
 
 def _cas2_sucess_response(user, pgt=None, proxies=None):
@@ -233,15 +234,17 @@ def _cas2_error_response(code, message=None):
 
 
 def proxy_success(pt):
-    response = etree.Element(CAS + 'serviceResponse', nsmap=NSMAP)
-    proxySuccess = etree.SubElement(response, CAS + 'proxySuccess')
-    proxyTicket = etree.SubElement(proxySuccess, CAS + 'proxyTicket')
-    proxyTicket.text = pt
-    return unicode(etree.tostring(response, encoding='utf-8'), 'utf-8')
+    return u'''<cas:serviceResponse xmlns:cas="http://www.yale.edu/tp/cas">
+    <cas:proxySuccess>
+        <cas:proxyTicket>%s</cas:proxyTicket>
+    </cas:proxySuccess>
+</cas:serviceResponse>''' % pt
+
 
 
 def auth_success_response(user, pgt, proxies):
-    response = etree.Element(CAS + 'serviceResponse', nsmap=NSMAP)
+    etree.register_namespace('cas', CAS_URI)
+    response = etree.Element(CAS + 'serviceResponse')
     auth_success = etree.SubElement(response, CAS + 'authenticationSuccess')
     username = etree.SubElement(auth_success, CAS + 'user')
     username.text = user.username
