@@ -1,5 +1,5 @@
-from lxml import etree
 import collections
+import xml.etree.ElementTree as etree
 
 CAS_URI = 'http://www.yale.edu/tp/cas'
 NSMAP = {'cas': CAS_URI}

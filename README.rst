@@ -17,8 +17,6 @@ To install, run the following command from this directory::
 
 Or, put `cas_provider` somewhere on your Python path.
 
-If you want use CAS v.2 protocol or above, you must install `lxml` package to correct work.
-
 UPDATING FROM PREVIOUS VERSION
 ===============================
 
